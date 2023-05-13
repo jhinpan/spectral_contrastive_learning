@@ -1,3 +1,7 @@
+PATH_TO_DATASET/
+
+checkpoints/
+
 # Byte-compiled / optimized Python files
 __pycache__/
 *.py[cod]
