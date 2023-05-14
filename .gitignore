@@ -1,6 +1,7 @@
 PATH_TO_DATASET/
 .DS_Store
 checkpoints/
+exp*/
 
 # Byte-compiled / optimized Python files
 __pycache__/

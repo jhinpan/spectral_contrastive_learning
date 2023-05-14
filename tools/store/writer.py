@@ -104,8 +104,12 @@ class ExperimentLogWriter(object):
         update_dict,
         dict_id='default'):
         df = pd.Series(update_dict)
-        self.data_dicts[dict_id] = self.data_dicts[dict_id].append(df, ignore_index=True)
-        
+
+        # below line updated due to pandas removed append
+        # self.data_dicts[dict_id] = self.data_dicts[dict_id].append(df, ignore_index=True)
+        self.data_dicts[dict_id] = \
+            pd.concat([self.data_dicts[dict_id], df], ignore_index=True)
+
     def save_data_dict(
         self,
         dict_id='default'):
