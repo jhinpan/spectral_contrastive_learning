@@ -103,14 +103,6 @@ def main():
     utils.spawn_processes(main_worker, args)
 
 
-def print_last_layer(model_path):
-    """Prints the last layer and its shape for the model saved at model_path."""
-    model = torch.load(model_path)
-    last_layer = list(model.children())[-1]
-    print("Last layer: ", last_layer)
-    print("Shape: ", last_layer.weight.shape)
-
-
 def main_worker(gpu, ngpus_per_node, args):
     global best_acc1
     args.gpu = gpu
@@ -134,8 +126,6 @@ def main_worker(gpu, ngpus_per_node, args):
         if args.latest_only and not fname.startswith('latest_'): continue
         if args.specific_ckpts is not None and fname not in args.specific_ckpts: continue
         args.pretrained = os.path.join(ckpt_dir, fname)
-
-        print_last_layer(args.pretrained)
 
         lineval_dir = os.path.join(args.dir, 'lin_eval_ckpt')
         if os.path.exists(lineval_dir):
