@@ -103,6 +103,30 @@ def main():
     utils.spawn_processes(main_worker, args)
 
 
+def get_embeddings(model, dataloader, device):
+    # Copy the model without its last layer
+    embedding_model = nn.Sequential(*list(model.children())[:-1])
+    embedding_model = embedding_model.to(device)
+
+    # Set the model in evaluation mode
+    embedding_model.eval()
+
+    # Initialize an empty tensor to store all the embeddings
+    all_embeddings = torch.empty((0, 512)).to(device)
+
+    with torch.no_grad():
+        for i, (images, _) in enumerate(dataloader):
+            images = images.to(device)
+
+            # Get embeddings for this batch and flatten them
+            embeddings = embedding_model(images).view(images.size(0), -1)
+
+            # Concatenate with the previous embeddings
+            all_embeddings = torch.cat((all_embeddings, embeddings))
+
+    return all_embeddings
+
+
 def main_worker(gpu, ngpus_per_node, args):
     global best_acc1
     args.gpu = gpu
@@ -176,6 +200,13 @@ def eval_ckpt(args, ngpus_per_node, ptrain_fname, logger):
             last_layer_name, last_layer = list(model.named_children())[-1]
             print(f"Last layer: {last_layer_name}")
             print(f"Last layer's shape: {last_layer.weight.shape}")
+
+            ###########################################
+            # Output:
+            # Last layer: fc
+            # Last layer's shape: torch.Size([10, 512])
+            ###########################################
+
         else:
             print("=> no checkpoint found at '{}'".format(args.pretrained))
     
@@ -299,46 +330,6 @@ def eval_ckpt(args, ngpus_per_node, ptrain_fname, logger):
 #             progress.display(i)
 
 #     return top1.avg, top5.avg, losses.avg
-
-
-# def validate(val_loader, model, criterion, args):
-#     losses = utils.AverageMeter('Loss', ':.4e')
-#     top1 = utils.AverageMeter('Acc@1', ':6.2f')
-#     top5 = utils.AverageMeter('Acc@5', ':6.2f')
-#     progress = utils.ProgressMeter(
-#         len(val_loader),
-#         [losses, top1, top5],
-#         prefix='Test: ')
-
-#     # switch to evaluate mode
-#     model.eval()
-
-#     with torch.no_grad():
-#         for i, (images, target) in enumerate(val_loader):
-#             if args.gpu is not None:
-#                 images = images.cuda(args.gpu, non_blocking=True)
-#             target = target.cuda(args.gpu, non_blocking=True)
-
-#             # compute output
-#             output = model(images)
-#             loss = criterion(output, target)
-
-#             # measure accuracy and record loss
-#             acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
-#             losses.update(loss.item(), images.size(0))
-#             top1.update(acc1[0], images.size(0))
-#             top5.update(acc5[0], images.size(0))
-
-#             if i % args.print_freq == 0:
-#                 progress.display(i)
-
-#         # TODO: this should also be done with the ProgressMeter
-#         # is the above todo done??
-#         print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-#               .format(top1=top1, top5=top5))
-
-#     return top1.avg, top5.avg, losses.avg
-
 
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar', best_file='model_best.pth.tar'):
     torch.save(state, filename)
