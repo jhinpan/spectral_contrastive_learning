@@ -175,6 +175,10 @@ def eval_ckpt(args, ngpus_per_node, ptrain_fname, logger):
 
     model = utils.init_data_parallel(args, model, ngpus_per_node)
 
+    print(f"{model = }")
+
+    return
+
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda(args.gpu)
 
