@@ -152,6 +152,12 @@ def load_train(dataset, num_per_class, distributed, batch_size, workers,
     else:
         train_sampler = None
 
+    ###################################
+    # Here we do not want shuffle, because we want to keep the order of the images
+    # we manually change distributed to False for this purpose
+    distributed = True
+    ###################################
+
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=batch_size, shuffle=(not distributed),
         num_workers=workers, pin_memory=True, sampler=train_sampler, drop_last=data_aug == 'pretrain')
