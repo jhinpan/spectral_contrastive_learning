@@ -1,8 +1,9 @@
 import time
 import os
+import sys
 import torch
 import torch.nn as nn
-import torch.nn.functional as F 
+import torch.nn.functional as F
 import torchvision
 import numpy as np
 from arguments import get_args
@@ -30,7 +31,7 @@ def main(log_writer, log_file, device, args):
     )
 
     test_loader = torch.utils.data.DataLoader(
-        dataset=get_dataset( 
+        dataset=get_dataset(
             transform=get_aug(train=True, **args.aug_kwargs),
             train=False,
             **args.dataset_kwargs),
@@ -45,17 +46,18 @@ def main(log_writer, log_file, device, args):
 
     # define optimizer
     optimizer = get_optimizer(
-        args.train.optimizer.name, model, 
-        lr=args.train.base_lr*args.train.batch_size/256, 
+        args.train.optimizer.name, model,
+        lr=args.train.base_lr*args.train.batch_size/256,
         momentum=args.train.optimizer.momentum,
         weight_decay=args.train.optimizer.weight_decay)
 
     lr_scheduler = LR_Scheduler(
         optimizer,
-        args.train.warmup_epochs, args.train.warmup_lr*args.train.batch_size/256, 
-        args.train.num_epochs, args.train.base_lr*args.train.batch_size/256, args.train.final_lr*args.train.batch_size/256, 
+        args.train.warmup_epochs, args.train.warmup_lr*args.train.batch_size/256,
+        args.train.num_epochs, args.train.base_lr*args.train.batch_size /
+        256, args.train.final_lr*args.train.batch_size/256,
         len(train_loader),
-        constant_predictor_lr=True # see the end of section 4.2 predictor
+        constant_predictor_lr=True  # see the end of section 4.2 predictor
     )
 
     ckpt_dir = os.path.join(args.log_dir, "checkpoints")
@@ -68,19 +70,21 @@ def main(log_writer, log_file, device, args):
         for idx, ((images1, images2), labels) in enumerate(train_loader):
             iter_count += 1
             model.zero_grad()
-            data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
+            data_dict = model.forward(images1.to(
+                device, non_blocking=True), images2.to(device, non_blocking=True))
             loss = data_dict['loss'].mean()
             loss.backward()
             optimizer.step()
             lr_scheduler.step()
-            data_dict.update({'lr':lr_scheduler.get_lr()})
+            data_dict.update({'lr': lr_scheduler.get_lr()})
             loss_list.append(loss.item())
 
         model.eval()
 
         test_loss_list = []
         for idx, ((images1, images2), labels) in enumerate(test_loader):
-            data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
+            data_dict = model.forward(images1.to(
+                device, non_blocking=True), images2.to(device, non_blocking=True))
             test_loss = data_dict['loss'].mean()
             test_loss_list.append(test_loss.item())
 
@@ -105,7 +109,7 @@ def main(log_writer, log_file, device, args):
     model_path = os.path.join(ckpt_dir, f"latest_{epoch+1}.pth")
     torch.save({
         'epoch': epoch+1,
-        'state_dict':model.module.state_dict()
+        'state_dict': model.module.state_dict()
     }, model_path)
     print(f"Model saved to {model_path}")
     with open(os.path.join(args.log_dir, "checkpoints", f"checkpoint_path.txt"), 'w+') as f:
@@ -117,8 +121,10 @@ if __name__ == "__main__":
 
     main(log_writer, log_file, device=args.device, args=args)
 
-    completed_log_dir = args.log_dir.replace('in-progress', 'debug' if args.debug else 'completed')
-    completed_log_dir = args.log_dir.replace('in-progress', 'debug' if args.debug else 'completed')
+    completed_log_dir = args.log_dir.replace(
+        'in-progress', 'debug' if args.debug else 'completed')
+    completed_log_dir = args.log_dir.replace(
+        'in-progress', 'debug' if args.debug else 'completed')
 
     os.rename(args.log_dir, completed_log_dir)
     print(f'Log file has been saved to {completed_log_dir}')
